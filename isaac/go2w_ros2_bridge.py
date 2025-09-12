@@ -20,13 +20,18 @@ from builtin_interfaces.msg import Time
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from scipy.spatial.transform import Rotation as R
 
+import omni.replicator.core as rep
+import omni.syntheticdata._syntheticdata as sd
+import omni.graph.core as og
+
 class RobotDataManager(Node):
-    def __init__(self, runner, lidar=None, camera=None, physics_dt=1/200, lidar_freq = 20.0, imu_freq=200.0, odom_freq=50.0):
+    def __init__(self, runner, lidar=None, camera=None, physics_dt=1/200, lidar_freq = 10.0, imu_freq=200.0, odom_freq=50.0):
         super().__init__("robot_data_manager")
         # self.declare_parameter("use_sim_time", True)
 
         self.lidar = lidar
         self.runner = runner
+        self.camera = camera
 
         self.physics_dt = float(physics_dt)
         self.imu_freq  = float(imu_freq)
@@ -64,6 +69,7 @@ class RobotDataManager(Node):
         self.prev_lin_vel_b = np.zeros(3)
 
         self.prev_stamp = None
+        self.pub_color_image()
 
     def _stamp(self) -> Time:
         sec = int(self.sim_t)
@@ -80,21 +86,25 @@ class RobotDataManager(Node):
         clk = Clock(); clk.clock = self._stamp()
         self.pub_clock.publish(clk)
 
-        # IMU @ 200 Hz (every step at 1/200)
+        # IMU
         self._imu_step += 1
         if (self._imu_step % self.imu_decim) == 0:
             self._publish_imu_fast()
             self._imu_step = 0
 
-        # og.Controller.evaluate_sync(self._imu_graph)
-
-        # Lidar @ 10 Hz (every 20 steps at 1/200)
+        # Camera
         self._lidar_step += 1
-        if (self._lidar_step % self.lidar_freq) == 0:
+        if (self._lidar_step % self.lidar_decim) == 0:
             self.publish_lidar_data(self.lidar.get_data()["data"].reshape(-1, 3))
             self._lidar_step = 0
 
-        # Odom/Pose/JS @ 50 Hz (every 4 steps at 1/200)
+        # Lidar
+        self._lidar_step += 1
+        if (self._lidar_step % self.lidar_decim) == 0:
+            self.publish_lidar_data(self.lidar.get_data()["data"].reshape(-1, 3))
+            self._lidar_step = 0
+
+        # Odom/Pose/JS
         self._odom_step += 1
         if (self._odom_step % self.odom_decim) == 0:
             self._publish_odom_pose_js()
@@ -209,3 +219,23 @@ class RobotDataManager(Node):
         ]
         point_cloud = point_cloud2.create_cloud(point_cloud.header, fields, points)
         self.pub_lidar.publish(point_cloud)  
+
+    def pub_color_image(self):
+        render_product = self.camera._render_product_path
+        step_size = 1
+        topic_name = "/unitree_go2w/front_cam/image_raw"
+        frame_id = "camera_link"
+
+        rv = omni.syntheticdata.SyntheticData.convert_sensor_type_to_rendervar(sd.SensorType.Rgb.name)
+        writer = rep.writers.get(rv + "ROS2PublishImage")
+        writer.initialize(
+            frameId=frame_id,
+            nodeNamespace="",
+            queueSize=1,
+            topicName=topic_name,
+        )
+        writer.attach([render_product])
+
+        # Control execution rate
+        gate_path = omni.syntheticdata.SyntheticData._get_node_path(rv + "IsaacSimulationGate", render_product)
+        og.Controller.attribute(gate_path + ".inputs:step").set(step_size)

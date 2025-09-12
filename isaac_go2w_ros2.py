@@ -64,6 +64,8 @@ class Go2wRunner:
 
         self.needs_reset = False
         self.first_step = True
+        self.physics_dt = physics_dt
+        self.render_dt = render_dt
 
     def setup(self) -> None:
         # Keyboard listener
@@ -79,11 +81,11 @@ class Go2wRunner:
         # Create sensors
         sm = SensorManager()
         lidar = sm.add_rtx_lidar()
-        camera = None #sm.add_camera()
+        camera = sm.add_camera()
 
         # Create ROS2 manager
         rclpy.init()
-        self._pub_data_node = RobotDataManager(self, lidar, camera)
+        self._pub_data_node = RobotDataManager(self, lidar, camera, self.physics_dt)
         self._cmdvel_node = CmdVelSubscriber(self)
 
     def on_physics_step(self, step_size: float) -> None:
@@ -119,8 +121,8 @@ class Go2wRunner:
         return True
 
 def main():
-    physics_dt = 1.0 / 600.0
-    render_dt = 1.0 / 60.0
+    physics_dt = 1.0 / 200.0
+    render_dt = 1.0 / 20.0 #
 
     runner = Go2wRunner(physics_dt=physics_dt, render_dt=render_dt)
 

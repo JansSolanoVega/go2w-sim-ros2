@@ -24,7 +24,7 @@ class SensorManager:
         """
         Creates a single RTX LiDAR and returns its annotator.
         """
-        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 30.0}
+        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 10.0}
         sensor = LidarRtx(
             prim_path=f"{self.base_prim}/lidar",
             translation=translation,
@@ -43,7 +43,7 @@ class SensorManager:
     def add_camera(
         self,
         frequency_hz: float = 30.0,
-        resolution: tuple[int, int] = (640, 480),
+        resolution: tuple[int, int] = (320, 240),
         translation: tuple[float, float, float] = (0.4, 0.0, 0.2),
         rpy_deg: tuple[float, float, float] = (0.0, 0.0, 0.0),
         camera_rel_path: str = "front_cam",
