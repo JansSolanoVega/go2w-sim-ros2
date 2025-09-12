@@ -92,12 +92,6 @@ class RobotDataManager(Node):
             self._publish_imu_fast()
             self._imu_step = 0
 
-        # Camera
-        self._lidar_step += 1
-        if (self._lidar_step % self.lidar_decim) == 0:
-            self.publish_lidar_data(self.lidar.get_data()["data"].reshape(-1, 3))
-            self._lidar_step = 0
-
         # Lidar
         self._lidar_step += 1
         if (self._lidar_step % self.lidar_decim) == 0:
