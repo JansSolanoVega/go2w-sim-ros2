@@ -86,9 +86,6 @@ class Go2wRunner:
         self._pub_data_node = RobotDataManager(self, lidar, camera)
         self._cmdvel_node = CmdVelSubscriber(self)
 
-        # self._pub_data_node.setup_rtx_lidar_ros2()
-
-
     def on_physics_step(self, step_size: float) -> None:
         if self.first_step:
             self._robot.initialize()
@@ -121,9 +118,8 @@ class Go2wRunner:
                 self._base_command -= np.array(self._input_keyboard_mapping[event.input.name])
         return True
 
-
 def main():
-    physics_dt = 1.0 / 200.0
+    physics_dt = 1.0 / 600.0
     render_dt = 1.0 / 60.0
 
     runner = Go2wRunner(physics_dt=physics_dt, render_dt=render_dt)

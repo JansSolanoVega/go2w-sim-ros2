@@ -29,3 +29,5 @@ TODO:
 - Currently I am publishing imu and lidar using the clock of simulation, given the 20 fps. Even though time stamps are in fact publishing at 200hz, they appear at 60hz when recording rosbag data.
 - Reducing the dt does not break the locomotion (1/200 to 1/600), so by dividing by 3 when can compensate the simulation fps and when can get 200hz. However timestamps are not at that frequency.
 - Other solution might be to use not clock time but simulation time for pubishing data?
+
+- Livox MID360: Simulation not available in Isaac Sim. https://github.com/Livox-SDK/livox_laser_simulation/issues/30

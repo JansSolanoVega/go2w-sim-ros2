@@ -21,7 +21,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPo
 from scipy.spatial.transform import Rotation as R
 
 class RobotDataManager(Node):
-    def __init__(self, runner, lidar=None, camera=None, physics_dt=1/200, lidar_freq = 10.0, imu_freq=200.0, odom_freq=50.0):
+    def __init__(self, runner, lidar=None, camera=None, physics_dt=1/200, lidar_freq = 20.0, imu_freq=200.0, odom_freq=50.0):
         super().__init__("robot_data_manager")
         # self.declare_parameter("use_sim_time", True)
 

@@ -6,7 +6,6 @@ from isaacsim.sensors.camera import Camera
 import isaacsim.core.utils.numpy.rotations as rot_utils
 from isaacsim.sensors.rtx import LidarRtx
 
-
 class SensorManager:
     """
     Attach RTX LiDAR and Camera to a single robot at /World/robot/base.
@@ -18,38 +17,27 @@ class SensorManager:
     # ---------------- RTX LiDAR ----------------
     def add_rtx_lidar(
         self,
-        config: str = "Example_Rotary",
-        translation: tuple[float, float, float] = (0.2, 0.0, 0.2),
+        config: str = "Example_Rotary",#,"Velodyne_VLS128" Hesai_XT32_SD10
+        translation: tuple[float, float, float] = (0.0, 0.0, 0.1),
         orientation_wxyz: tuple[float, float, float, float] = (1.0, 0.0, 0.0, 0.0)
     ):
         """
         Creates a single RTX LiDAR and returns its annotator.
         """
-        _, sensor = omni.kit.commands.execute(
-            "IsaacSensorCreateRtxLidar",
-            path="/lidar",
-            parent=self.base_prim,
-            config=config,
+        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 30.0}
+        sensor = LidarRtx(
+            prim_path=f"{self.base_prim}/lidar",
             translation=translation,
-            orientation=Gf.Quatd(*orientation_wxyz),
+            orientation=orientation_wxyz,
+            config_file_name=config,
+            **sensor_attributes,
         )
 
-        rp = rep.create.render_product(str(sensor.GetPath()), resolution=(16, 16))
+        sensor.initialize()
         pc_annot = rep.AnnotatorRegistry.get_annotator("IsaacExtractRTXSensorPointCloudNoAccumulator")
-        pc_annot.attach([rp])
+        pc_annot.attach([sensor._render_product])
         
         return pc_annot
-        # sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 10.0}
-
-        # # Create the RTX Lidar with the specified attributes.
-        # sensor = LidarRtx(
-        #     prim_path=f"{self.base_prim}/lidar",
-        #     translation=translation,
-        #     orientation=orientation_wxyz,
-        #     config_file_name=config,
-        #     **sensor_attributes,
-        # )
-        # return sensor
 
     # ---------------- Camera ----------------
     def add_camera(
