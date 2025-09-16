@@ -17,14 +17,14 @@ class SensorManager:
     # ---------------- RTX LiDAR ----------------
     def add_rtx_lidar(
         self,
-        config: str = "Example_Rotary",#,"Velodyne_VLS128" Hesai_XT32_SD10
+        config: str = "XT32_SD10", #{Example_Rotary, VLS_128, XT32_SD10}
         translation: tuple[float, float, float] = (0.0, 0.0, 0.1),
         orientation_wxyz: tuple[float, float, float, float] = (1.0, 0.0, 0.0, 0.0)
     ):
         """
         Creates a single RTX LiDAR and returns its annotator.
         """
-        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 30.0}
+        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 30.0}#10.0}
         sensor = LidarRtx(
             prim_path=f"{self.base_prim}/lidar",
             translation=translation,

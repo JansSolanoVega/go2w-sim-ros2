@@ -106,7 +106,7 @@ class Go2wRunner:
 
         # Spin ROS node briefly
         self._pub_data_node.on_physics_step(step_size)
-        
+
         self._exec.spin_once(timeout_sec=0.0)  # services params for both nodes
 
     def run(self) -> None:
