@@ -23,11 +23,15 @@ from scipy.spatial.transform import Rotation as R
 import omni.replicator.core as rep
 import omni.syntheticdata._syntheticdata as sd
 import omni.graph.core as og
+from rclpy.parameter import Parameter
 
 class RobotDataManager(Node):
     def __init__(self, runner, lidar=None, camera=None, physics_dt=1/200, lidar_freq = 10.0, imu_freq=200.0, odom_freq=50.0):
         super().__init__("robot_data_manager")
-        # self.declare_parameter("use_sim_time", True)
+        
+        self.set_parameters([
+            Parameter("use_sim_time", Parameter.Type.BOOL, True)
+        ])
 
         self.lidar = lidar
         self.runner = runner

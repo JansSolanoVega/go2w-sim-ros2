@@ -122,7 +122,7 @@ class Go2wRunner:
 
 def main():
     physics_dt = 1.0 / 200.0
-    render_dt = 1.0 / 20.0 #
+    render_dt = 1.0 / 20.0
 
     runner = Go2wRunner(physics_dt=physics_dt, render_dt=render_dt)
 

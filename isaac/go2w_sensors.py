@@ -24,7 +24,7 @@ class SensorManager:
         """
         Creates a single RTX LiDAR and returns its annotator.
         """
-        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 30.0}
+        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 10.0}
         sensor = LidarRtx(
             prim_path=f"{self.base_prim}/lidar",
             translation=translation,
@@ -34,10 +34,38 @@ class SensorManager:
         )
 
         sensor.initialize()
-        pc_annot = rep.AnnotatorRegistry.get_annotator("IsaacExtractRTXSensorPointCloudNoAccumulator")
+        pc_annot = rep.AnnotatorRegistry.get_annotator("IsaacExtractRTXSensorPointCloudNoAccumulator")#IsaacCreateRTXLidarScanBuffer")#"")
         pc_annot.attach([sensor._render_product])
         
         return pc_annot
+    
+    def add_rtx_lidar_accumulator(
+        self,
+        config: str = "Example_Rotary",#,"Velodyne_VLS128" Hesai_XT32_SD10
+        translation: tuple[float, float, float] = (0.0, 0.0, 0.1),
+        orientation_wxyz: tuple[float, float, float, float] = (1.0, 0.0, 0.0, 0.0)
+    ):
+        """
+        Creates a single RTX LiDAR and returns its annotator.
+        """
+        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 10.0}
+        sensor = LidarRtx(
+            prim_path=f"{self.base_prim}/lidar",
+            translation=translation,
+            orientation=orientation_wxyz,
+            config_file_name=config,
+            **sensor_attributes,
+        )
+
+        sensor.initialize()
+        writer = rep.WriterRegistry.get("RtxLidar" + "ROS2PublishPointCloud")
+        writer.initialize(
+            topicName="unitree_go2w/lidar/point_cloud",
+            frameId="lidar_frame",
+        )
+        writer.attach([sensor._render_product])
+        
+        return None
 
     # ---------------- Camera ----------------
     def add_camera(
