@@ -24,7 +24,7 @@ class SensorManager:
         """
         Creates a single RTX LiDAR and returns its annotator.
         """
-        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 10.0}
+        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 30.0}
         sensor = LidarRtx(
             prim_path=f"{self.base_prim}/lidar",
             translation=translation,
@@ -34,7 +34,9 @@ class SensorManager:
         )
 
         sensor.initialize()
-        pc_annot = rep.AnnotatorRegistry.get_annotator("IsaacExtractRTXSensorPointCloudNoAccumulator")#IsaacCreateRTXLidarScanBuffer")#"")
+        pc_annot = rep.AnnotatorRegistry.get_annotator("IsaacCreateRTXLidarScanBuffer")
+        #pc_annot = rep.AnnotatorRegistry.get_annotator("IsaacExtractRTXSensorPointCloudNoAccumulator")
+        
         pc_annot.attach([sensor._render_product])
         
         return pc_annot
