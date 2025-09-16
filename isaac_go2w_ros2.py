@@ -20,6 +20,7 @@ from isaac.go2w_ctrl import GO2WPolicy, CmdVelSubscriber
 from isaac.go2w_ros2_bridge import RobotDataManager
 from isaac.go2w_sensors import SensorManager
 import rclpy
+from rclpy.executors import SingleThreadedExecutor
 
 POLICY_PT   = "ckpts/policy.pt"
 ENV_YAML    = "cfg/env.yaml"
@@ -88,6 +89,10 @@ class Go2wRunner:
         self._pub_data_node = RobotDataManager(self, lidar, camera, self.physics_dt)
         self._cmdvel_node = CmdVelSubscriber(self)
 
+        self._exec = SingleThreadedExecutor()
+        self._exec.add_node(self._pub_data_node)
+        self._exec.add_node(self._cmdvel_node)
+
     def on_physics_step(self, step_size: float) -> None:
         if self.first_step:
             self._robot.initialize()
@@ -101,9 +106,8 @@ class Go2wRunner:
 
         # Spin ROS node briefly
         self._pub_data_node.on_physics_step(step_size)
-
-        if self._cmdvel_node is not None:
-            rclpy.spin_once(self._cmdvel_node, timeout_sec=0.0)
+        
+        self._exec.spin_once(timeout_sec=0.0)  # services params for both nodes
 
     def run(self) -> None:
         while simulation_app.is_running():
