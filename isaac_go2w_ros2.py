@@ -16,7 +16,7 @@ import omni.appwindow
 from isaacsim.core.api import World
 from isaacsim.core.utils.prims import define_prim
 from isaacsim.storage.native import get_assets_root_path
-from isaac.go2w_ctrl import GO2WPolicy, CmdVelSubscriber
+from isaac.go2w_ctrl import GO2WPolicy, CmdVelSubscriber, JoystickPublisher
 from isaac.go2w_ros2_bridge import RobotDataManager
 from isaac.go2w_sensors import SensorManager
 import rclpy
@@ -88,10 +88,12 @@ class Go2wRunner:
         rclpy.init()
         self._pub_data_node = RobotDataManager(self, lidar, camera, self.physics_dt)
         self._cmdvel_node = CmdVelSubscriber(self)
+        self._joy_node = JoystickPublisher()
 
         self._exec = SingleThreadedExecutor()
         self._exec.add_node(self._pub_data_node)
         self._exec.add_node(self._cmdvel_node)
+        self._exec.add_node(self._joy_node)
 
     def on_physics_step(self, step_size: float) -> None:
         if self.first_step:
@@ -143,6 +145,8 @@ def main():
     if runner._cmdvel_node is not None:
         runner._pub_data_node.destroy_node()
         runner._cmdvel_node.destroy_node()
+        runner._joy_node.destroy_node()
+
     rclpy.shutdown()
 
     simulation_app.close()

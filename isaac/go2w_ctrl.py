@@ -7,6 +7,7 @@ from isaacsim.core.utils.types import ArticulationAction
 
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Joy
 
 class CmdVelSubscriber(Node):
     """ROS2 node that listens to /cmd_vel and updates base command."""
@@ -19,6 +20,42 @@ class CmdVelSubscriber(Node):
     def listener_callback(self, msg: Twist):
         # Map Twist to [vx, vy, wz]
         self.runner._base_command = np.array([msg.linear.x, msg.linear.y, msg.angular.z], dtype=float)
+
+class JoystickPublisher(Node):
+    """ROS2 node that converts joystick input into Twist commands."""
+    def __init__(self):
+        super().__init__('joystick_to_cmdvel')
+
+        # Publisher to your robot's cmd_vel
+        self.publisher = self.create_publisher(Twist, '/unitree_go2w/cmd_vel', 10)
+
+        # Subscriber to joystick events
+        self.subscription = self.create_subscription(Joy, '/joy', self.joy_callback, 10)
+
+        # Config: axis mapping (adjust if needed)
+        self.axis_linear_x = 1     # left stick vertical
+        self.axis_linear_y = 0     # left stick horizontal
+        self.axis_angular_z = 3    # right stick horizontal
+        self.enable_button = 4     # LB button must be pressed
+
+        # Scaling factors
+        self.scale_linear = 0.75    # m/s
+        self.scale_angular = 0.75   # rad/s
+
+    def joy_callback(self, joy_msg: Joy):
+        twist = Twist()
+
+        # Only move if enable button is pressed
+        if joy_msg.buttons[self.enable_button]:
+            twist.linear.x = self.scale_linear * joy_msg.axes[self.axis_linear_x]
+            twist.linear.y = self.scale_linear * joy_msg.axes[self.axis_linear_y]
+            twist.angular.z = self.scale_angular * joy_msg.axes[self.axis_angular_z]
+        else:
+            twist.linear.x = 0.0
+            twist.linear.y = 0.0
+            twist.angular.z = 0.0
+
+        self.publisher.publish(twist)
 
 class GO2WPolicy(PolicyController):
     """GO2-W: legs (pose control) + wheels (velocity control), 57-dim observation."""

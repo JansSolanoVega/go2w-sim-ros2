@@ -50,7 +50,7 @@ class SensorManager:
         """
         Creates a single RTX LiDAR and returns its annotator.
         """
-        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 10.0}
+        sensor_attributes = {'omni:sensor:Core:scanRateBaseHz': 30.0}
         sensor = LidarRtx(
             prim_path=f"{self.base_prim}/lidar",
             translation=translation,

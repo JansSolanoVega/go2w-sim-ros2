@@ -95,7 +95,7 @@ class RobotDataManager(Node):
         # Lidar
         self._lidar_step += 1
         if (self._lidar_step % self.lidar_decim) == 0:
-            self.publish_lidar_data(self.lidar.get_data()["data"].reshape(-1, 3))
+            self.publish_lidar_data_lio(self.lidar.get_data()["data"].reshape(-1, 3))
             self._lidar_step = 0
 
         # Odom/Pose/JS
@@ -233,3 +233,65 @@ class RobotDataManager(Node):
         # Control execution rate
         gate_path = omni.syntheticdata.SyntheticData._get_node_path(rv + "IsaacSimulationGate", render_product)
         og.Controller.attribute(gate_path + ".inputs:step").set(step_size)
+    
+    def publish_lidar_data_lio(self, points_xyz: np.ndarray,
+                       spin_hz: float = 10.0,
+                       n_scan: int = 32,
+                       ring_mode: str = "zeros",   # "zeros" or "modulo"
+                       intensities: np.ndarray | None = None):
+        """
+        Publish dense XYZIRT cloud expected by LIO pipelines.
+        - points_xyz: Nx3 float array (may contain NaNs)
+        - spin_hz: LiDAR spin rate; used to synthesize per-point time (deskew)
+        - n_scan: vertical channels if you want a modulo-based fake 'ring'
+        - ring_mode: "zeros" (safe) or "modulo" (i % n_scan)
+        - intensities: optional Nx1 float array; None -> fill 1.0
+        """
+        if points_xyz is None:
+            return
+
+        pts = np.asarray(points_xyz, dtype=np.float32).reshape(-1, 3)
+        # remove NaNs -> dense cloud
+        mask = np.isfinite(pts).all(axis=1)
+        pts = pts[mask]
+        if pts.size == 0:
+            return
+        N = pts.shape[0]
+
+        # intensity
+        if intensities is not None:
+            intensities = np.asarray(intensities, dtype=np.float32).reshape(-1)
+            intensities = intensities[:len(points_xyz)][mask]
+        else:
+            intensities = np.ones(N, dtype=np.float32)
+
+        # ring (synthetic)
+        if ring_mode == "modulo" and n_scan > 1:
+            ring = (np.arange(N, dtype=np.int32) % n_scan).astype(np.float32)
+        else:
+            ring = np.zeros(N, dtype=np.float32)
+
+        # per-point relative time (0 .. scan_period)
+        scan_period = 1.0 / float(spin_hz) if spin_hz > 0 else 0.1
+        time_rel = np.linspace(0.0, scan_period, N, dtype=np.float32)
+
+        # stack XYZIRT as float32 for clean 24B alignment
+        xyzirt = np.column_stack((pts, intensities, ring, time_rel)).astype(np.float32)
+
+        # header from your sim-time
+        header = PointCloud2().header
+        header.frame_id = "lidar_frame"
+        header.stamp = self._stamp()
+
+        fields = [
+            PointField(name="x",         offset=0,  datatype=PointField.FLOAT32, count=1),
+            PointField(name="y",         offset=4,  datatype=PointField.FLOAT32, count=1),
+            PointField(name="z",         offset=8,  datatype=PointField.FLOAT32, count=1),
+            PointField(name="intensity", offset=12, datatype=PointField.FLOAT32, count=1),
+            PointField(name="ring",      offset=16, datatype=PointField.FLOAT32, count=1),  # keep float for alignment
+            PointField(name="time",      offset=20, datatype=PointField.FLOAT32, count=1),
+        ]
+
+        cloud = point_cloud2.create_cloud(header, fields, xyzirt.tolist())
+        cloud.is_dense = True
+        self.pub_lidar.publish(cloud)
