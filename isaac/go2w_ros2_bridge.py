@@ -47,10 +47,9 @@ class RobotDataManager(Node):
         self._odom_step = 0
         self._lidar_step = 0
 
-        # single /clock publisher (best effort, keep_last=1)
         clock_qos = QoSProfile(
             depth=1,
-            reliability=ReliabilityPolicy.BEST_EFFORT,
+            reliability=ReliabilityPolicy.RELIABLE,
             durability=DurabilityPolicy.VOLATILE,
             history=HistoryPolicy.KEEP_LAST,
         )
