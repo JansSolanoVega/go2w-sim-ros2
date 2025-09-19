@@ -144,7 +144,7 @@ class RobotDataManager(Node):
         odom = Odometry()
         odom.header.stamp = stamp_now
         odom.header.frame_id = "odom"
-        odom.child_frame_id  = "base_link"
+        odom.child_frame_id  = "base"
         odom.pose.pose.position.x, odom.pose.pose.position.y, odom.pose.pose.position.z = map(float, pos[:3])
         odom.pose.pose.orientation.w, odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z = map(float, quat[:4])
         odom.twist.twist.linear.x,  odom.twist.twist.linear.y,  odom.twist.twist.linear.z  = map(float, lin_vel[:3])
@@ -153,7 +153,7 @@ class RobotDataManager(Node):
 
         t = TransformStamped()
         t.header = odom.header
-        t.child_frame_id = "base_link"
+        t.child_frame_id = "base"
         t.transform.translation.x, t.transform.translation.y, t.transform.translation.z = map(float, pos[:3])
         t.transform.rotation = odom.pose.pose.orientation
         self.tf_dyn.sendTransform(t)
@@ -171,11 +171,11 @@ class RobotDataManager(Node):
         self.runner._base_command = np.array([msg.linear.x, msg.linear.y, msg.angular.z], dtype=float)
 
     def _publish_static_frames(self):
-        # imu_link relative to base_link
+        # imu_link relative to base
         imu_broadcaster = StaticTransformBroadcaster(self)
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = "base_link"
+        t.header.frame_id = "base"
         t.child_frame_id = "imu_link"
         t.transform.rotation.w = 1.0
         imu_broadcaster.sendTransform(t)
@@ -184,7 +184,7 @@ class RobotDataManager(Node):
         lidar_broadcaster = StaticTransformBroadcaster(self)
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = "base_link"
+        t.header.frame_id = "base"
         t.child_frame_id = "lidar_frame"
         t.transform.translation.x = 0.2
         t.transform.translation.z = 0.2
@@ -195,7 +195,7 @@ class RobotDataManager(Node):
         camera_broadcaster = StaticTransformBroadcaster(self)
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = "base_link"
+        t.header.frame_id = "base"
         t.child_frame_id = "camera_link"
         t.transform.translation.x = 0.4
         t.transform.translation.z = 0.2
